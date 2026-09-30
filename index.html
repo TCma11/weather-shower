@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>陈令瑜 的今日天气雷达 🌤️</title>
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #f8fafc 100%);
+      --card-bg: rgba(255, 255, 255, 0.94);
+      --card-border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-soft: #64748b;
+      --accent: #0284c7;
+      --tag-bg: #e0f2fe;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text-main);
+      padding: 20px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 26px 22px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 8px;
+    }
+    .city-badge {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      font-weight: 500;
+    }
+    .greeting-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #0f172a;
+    }
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .weather-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .weather-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+    .weather-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .weather-info .label {
+      font-size: 0.72rem;
+      color: var(--text-soft);
+      margin-bottom: 2px;
+    }
+    .weather-info .val {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .weather-full-row {
+      grid-column: span 2;
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .content-box {
+      font-size: 0.93rem;
+      line-height: 1.75;
+      color: #334155;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      white-space: pre-wrap;
+    }
+    .loading-pulse {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 0;
+      gap: 10px;
+      color: var(--text-soft);
+      font-size: 0.85rem;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #e2e8f0;
+      border-top: 3px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .footer-note {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 0.76rem;
+      color: #94a3b8;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="tag">🚀 好友天气雷达</div>
+      <div class="city-badge" id="locDisplay">📍 漳州</div>
+    </div>
+
+    <div class="greeting-title" id="greetingHeader">
+      哟，陈令瑜 ✌️
+    </div>
+
+    <!-- 实用气象指标展示 -->
+    <div class="weather-grid" id="weatherGrid">
+      <div class="weather-item">
+        <div class="weather-icon">🌡️</div>
+        <div class="weather-info">
+          <span class="label">当前气温 (体感)</span>
+          <span class="val" id="tempText">加载中...</span>
+        </div>
+      </div>
+      <div class="weather-item">
+        <div class="weather-icon">💧</div>
+        <div class="weather-info">
+          <span class="label">空气湿度</span>
+          <span class="val" id="humidityText">加载中...</span>
+        </div>
+      </div>
+      <div class="weather-item weather-full-row">
+        <div class="weather-icon" id="rainIcon">☔</div>
+        <div class="weather-info">
+          <span class="label">出门带伞 / 降水提示</span>
+          <span class="val" id="rainText">正在查雷达云图...</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="contentArea">
+      <div class="loading-pulse">
+        <div class="spinner"></div>
+        <div>气象数据抓取中，稍等片刻...</div>
+      </div>
+    </div>
+
+    <div class="footer-note" id="timeFoot">同步本地时间中...</div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      name: "陈令瑜",
+      city: "漳州",
+      key: "sk-d535d547bf40448693e794f7359f4824"
+    };
+
+    function getPeriod(hour) {
+      if (hour >= 5 && hour < 9) return "大早上的";
+      if (hour >= 9 && hour < 12) return "上午";
+      if (hour >= 12 && hour < 14) return "中午";
+      if (hour >= 14 && hour < 18) return "下午";
+      if (hour >= 18 && hour < 22) return "晚上";
+      return "大半夜";
+    }
+
+    async function loadCard() {
+      const now = new Date();
+      const period = getPeriod(now.getHours());
+      const timeStr = `${now.getMonth() + 1}月${now.getDate()}日 ${period}`;
+      document.getElementById('timeFoot').innerText = `${timeStr} · 摸鱼也要看天气 🕶️`;
+
+      let weatherData = null;
+
+      try {
+        // 1. 获取城市定位
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(CONFIG.city)}&count=1&language=zh&format=json`);
+        const geoJson = await geoRes.json();
+        const loc = (geoJson.results && geoJson.results.length > 0) ? geoJson.results[0] : null;
+
+        const lat = loc ? loc.latitude : 30.27;
+        const lon = loc ? loc.longitude : 120.15;
+        if (loc) {
+          document.getElementById('locDisplay').innerText = `📍 ${loc.name}`;
+        }
+
+        // 2. 获取真实气象数据
+        const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
+        weatherData = await wRes.json();
+
+        const curTemp = Math.round(weatherData.current.temperature_2m);
+        const feelTemp = Math.round(weatherData.current.apparent_temperature);
+        const humidity = weatherData.current.relative_humidity_2m;
+        const precip = weatherData.current.precipitation;
+        const maxProb = weatherData.daily && weatherData.daily.precipitation_probability_max ? weatherData.daily.precipitation_probability_max[0] : 0;
+        const minTemp = Math.round(weatherData.daily.temperature_2m_min[0]);
+        const maxTemp = Math.round(weatherData.daily.temperature_2m_max[0]);
+
+        document.getElementById('tempText').innerText = `${curTemp}°C (体感 ${feelTemp}°C)`;
+        document.getElementById('humidityText').innerText = `${humidity}% (${humidity > 75 ? '略闷潮' : humidity < 40 ? '较干燥' : '体感舒服'})`;
+
+        if (precip > 0) {
+          document.getElementById('rainIcon').innerText = "🌧️";
+          document.getElementById('rainText').innerText = `目前有雨（降水约 ${precip}mm），出门必带伞！别淋成落汤鸡`;
+        } else if (maxProb >= 50) {
+          document.getElementById('rainIcon').innerText = "🌦️";
+          document.getElementById('rainText').innerText = `降雨概率 ${maxProb}%，包里塞把折伞防被偷袭`;
+        } else {
+          document.getElementById('rainIcon').innerText = "🌤️";
+          document.getElementById('rainText').innerText = `目前无雨（降雨概率 ${maxProb}%），今日温差 ${minTemp}° ~ ${maxTemp}°C`;
+        }
+
+      } catch (e) {
+        document.getElementById('tempText').innerText = "一切正常";
+        document.getElementById('humidityText').innerText = "适中";
+        document.getElementById('rainText').innerText = "天气良好，出门带好脑子即可";
+      }
+
+      // 3. DeepSeek Agent: 好朋友爽朗元气风格
+      let aiSuccess = false;
+      if (CONFIG.key && !CONFIG.key.includes("xxxx")) {
+        try {
+          const curTemp = weatherData ? Math.round(weatherData.current.temperature_2m) : 22;
+          const feelTemp = weatherData ? Math.round(weatherData.current.apparent_temperature) : 22;
+          const humidity = weatherData ? weatherData.current.relative_humidity_2m : 55;
+          const isRain = weatherData ? (weatherData.current.precipitation > 0 || (weatherData.daily.precipitation_probability_max[0] >= 50)) : false;
+
+          const prompt = `你是一个说话爽快、幽默、像铁哥们/好闺蜜一样的天气助理。
+请为好友【${CONFIG.name}】写一段天气提醒与朋友间元气的问候。
+参考信息：
+- 城市：${CONFIG.city}，时段：${period}
+- 气温：${curTemp}°C（体感约 ${feelTemp}°C），湿度：${humidity}%
+- 下雨情况：${isRain ? "有雨或降雨概率很大，要带伞" : "晴好或无雨"}
+
+语气要求：
+1. **拒绝任何肉麻、暧昧和恋爱向词汇**！这是发给普通好朋友/铁哥们的。
+2. 语言风格：**自然、接地气、元气利落、略带幽默**（例如下课、适度摸鱼、吃点好吃的、别被风吹跑等）。
+3. 顺带清晰提醒穿衣或带伞。
+4. 字数控制在 100~130 字左右，分段干净。`;
+
+          const response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${CONFIG.key}`
+            },
+            body: JSON.stringify({
+              model: 'deepseek-chat',
+              messages: [
+                { role: 'system', content: 'You are a frank, humorous, and supportive good friend.' },
+                { role: 'user', content: prompt }
+              ],
+              temperature: 0.7
+            })
+          });
+
+          const resJson = await response.json();
+          if (resJson.choices && resJson.choices[0]) {
+            const reply = resJson.choices[0].message.content;
+            document.getElementById('contentArea').innerHTML = `<div class="content-box">${reply}</div>`;
+            aiSuccess = true;
+          }
+        } catch (err) {
+          console.log("DeepSeek 调用失败，切换为朋友版备用模板", err);
+        }
+      }
+
+      // 4. 离线/备用文案：好朋友清爽版
+      if (!aiSuccess) {
+        const temp = weatherData ? Math.round(weatherData.current.temperature_2m) : 22;
+        const isRain = weatherData ? (weatherData.current.precipitation > 0 || weatherData.daily.precipitation_probability_max[0] >= 50) : false;
+        
+        let rainAdvice = isRain 
+          ? "记得带把伞，别为了帅/省事被淋成落汤鸡 ☂️" 
+          : "今天没有雨，可以放心浪，防晒随缘做好 🕶️️";
+        
+        let dressAdvice = temp < 15 
+          ? "气温有点凉飕飕的，多套件外套，别感冒了还得吃药 🧥" 
+          : (temp > 28 ? "外面有点闷热，多喝水，少暴晒，奶茶适度 🥤" : "温度相当舒服，微风不燥，适合搞点好吃的犒劳一下自己 🍔");
+
+        const friendMsg = `${CONFIG.name}，${period}好啊！\n\n给你播报下，今天${CONFIG.city}大概 ${temp}°C。${dressAdvice}\n\n${rainAdvice}\n\n今天搬砖/上课辛苦了，该摸鱼摸鱼，该干饭干饭，祝你今天顺顺利利，少遇到点离谱事！💪`;
+
+        document.getElementById('contentArea').innerHTML = `<div class="content-box">${friendMsg}</div>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadCard);
+  </script>
+</body>
+</html>
